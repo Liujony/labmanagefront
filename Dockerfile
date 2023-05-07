@@ -16,9 +16,3 @@ COPY . .
 # Build the Vue project
 RUN npm run build
 
-# Expose the port that the Vue app is running on
-EXPOSE 3000
-
-# Start the app
-CMD ["npm", "start"]
-
