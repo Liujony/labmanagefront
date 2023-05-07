@@ -31,7 +31,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/labmanagefront:${{ github.sha }}
 
       - name: Update server to use latest Docker image
-        uses: appleboy/ssh-action@0.1.10
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.IP_ADDRESS }}
           username: ${{ secrets.SERVER_NAME }}
