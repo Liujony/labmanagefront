@@ -2,13 +2,16 @@ export enum IUserAuth {
   SystemManager = 1,
   LabTechnician,
   Teacher,
-  Student
+  Student,
+  Unauthorized = -1
 }
 
+export const AUTH_LABEL_MAP = ['unknown', '系统管理员', '实验员', '教师', '学生'] as const
 
 interface UserBasic {
-  UUID: string
+  uuid: string
   username: string
+  role: typeof AUTH_LABEL_MAP[number]
 }
 
 type TeacherTitle = '教授' | '副教授' | '讲师'
@@ -27,7 +30,7 @@ export interface LabTechnician extends UserBasic {
 export interface Student extends UserBasic {
   auth: IUserAuth.Student
   major: string
-  class: string
+  classnum: string
 }
 
 export type User = Teacher | Student | LabTechnician
