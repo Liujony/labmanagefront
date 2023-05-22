@@ -1,12 +1,17 @@
 // import useUserStore from "@/stores/user"
 import router from '@/router'
+import useUserStore from '@/stores/user'
 import axios from 'axios'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const instance = axios.create({
+  baseURL: 'https://carrent.starlightness.tech/api',
   timeout: 10 * 1000,
+  withCredentials: true,
+  headers: {
+    "Content-Type": 'application/json'
+  }
 })
-
-instance.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 
 type IErrorStatus = number
 const handleError = (status: IErrorStatus, msg: string) => {
@@ -15,81 +20,128 @@ const handleError = (status: IErrorStatus, msg: string) => {
       router.replace({
         path: '/login',
         query: {
-          redirect: router.currentRoute.value
+          redirect: router.currentRoute.value.path
         }
       })
       break
-    case 403:
-      Toast({
-        message: '登录过期，请重新登录',
-        duration: 1000,
-        forbidClick: true
-      })
-      // 清除token
-      localStorage.removeItem('token')
-      store.commit('loginSuccess', null)
-      // 跳转登录页面，并将要浏览的页面fullPath传过去，登录成功后跳转需要访问的页面
-      setTimeout(() => {
-        router.replace({
-          path: '/login',
-          query: {
-            redirect: router.currentRoute.fullPath
-          }
-        })
-      }, 1000)
-      break
-
     case 404:
-      Toast({
-        message: '网络请求不存在',
-        duration: 1500,
-        forbidClick: true
-      })
       break
     // 其他错误，直接抛出错误提示
     default:
-      Toast({
-        message: error.response.data.message,
-        duration: 1500,
-        forbidClick: true
-      })
+      break
   }
-  return Promise.reject(error.response)
+  return Promise.reject(msg)
 }
 
-axios.interceptors.request.use(
-  config => config
-    // const userStore = useUserStore()
-    // const token = userStore.token
-    // if (token) {
-    //   config.headers.Authorization = token
-    // }
-  ,
-  error => Promise.reject(error)
+let activeAxios = 0
+let timer: number | null
+
+const showLoading = () => {
+  activeAxios++
+  if (timer) {
+    clearTimeout(timer)
+  }
+}
+
+// http request 拦截器
+instance.interceptors.request.use(
+  config => {
+    showLoading()
+    return config
+  },
+  error => {
+    if (!error.config.doNotShowLoading) {
+      // closeLoading()
+    }
+    ElMessage({
+      showClose: true,
+      message: error,
+      type: 'error'
+    })
+    return error
+  }
 )
 
-axios.interceptors.response.use(
-  response => response.status === 200
-      ? Promise.resolve(response)
-      : Promise.reject(response),
-  error => {
-    const { response } = error
-    if (response) {
-      // 请求已发出，但是不在2xx的范围
-      handleError(response.status, response.data.msg)
-      return Promise.reject(response)
-  } else {
-      // 处理断网的情况
-      // eg:请求超时或断网时，更新state的network状态
-      // network状态在app.vue中控制着一个全局的断网提示组件的显示隐藏
-      // 关于断网组件中的刷新重新获取数据，会在断网组件中说明
-      if (!window.navigator.onLine) {
-         store.commit('changeNetwork', false)
-      } else {
-          return Promise.reject(error)
+// http response 拦截器
+instance.interceptors.response.use(
+  response => {
+    try {
+      const { config, data: responseBody, status } = response
+      const { msg, data, code } = responseBody
+      switch (+code) {
+        case 200: 
+          return data
+        case 401: 
+          ElMessage.error('登录状态过期，请重新登录')
+          router.replace({ name: 'login' })
+          return
+        default:         
+          ElMessage({
+            showClose: true,
+            message: msg,
+            type: 'error'
+          })
+          return responseBody
       }
-  }
+    } catch (err) {
+      console.log(err)
+      throw(err)
+    }
+  },
+  error => {
+    console.log(error)
+    if (!error.response) {
+      ElMessageBox.confirm(`
+        <p>检测到请求错误</p>
+        <p>${error}</p>
+        `, '请求报错', {
+        dangerouslyUseHTMLString: true,
+        distinguishCancelAndClose: true,
+        confirmButtonText: '稍后重试',
+        cancelButtonText: '取消'
+      })
+      return
+    }
 
+    switch (error.response.status) {
+      case 401:
+        ElMessage({
+          type: 'error',
+          message: '登录状态过期，请重新登录'
+        })
+        const userStore = useUserStore()
+        userStore.logout()
+        router.replace('/login')
+        break
+      case 500:
+        ElMessageBox.confirm(`
+        <p>检测到接口错误${error}</p>
+        <p>错误码<span style="color:red"> 500 </span>：此类错误内容常见于后台panic，请先查看后台日志，如果影响您正常使用可强制登出清理缓存</p>
+        `, '接口报错', {
+          dangerouslyUseHTMLString: true,
+          distinguishCancelAndClose: true,
+          confirmButtonText: '清理缓存',
+          cancelButtonText: '取消'
+        })
+          .then(() => {
+            localStorage.clear()
+            router.replace({ name: 'login' })
+          })
+        break
+      case 404:
+        ElMessageBox.confirm(`
+          <p>检测到接口错误${error}</p>
+          <p>错误码<span style="color:red"> 404 </span>：此类错误多为接口未注册（或未重启）或者请求路径（方法）与api路径（方法）不符--如果为自动化代码请检查是否存在空格</p>
+          `, '接口报错', {
+          dangerouslyUseHTMLString: true,
+          distinguishCancelAndClose: true,
+          confirmButtonText: '我知道了',
+          cancelButtonText: '取消'
+        })
+        break
+    }
+
+    return error
   }
 )
 

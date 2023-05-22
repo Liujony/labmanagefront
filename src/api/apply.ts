@@ -31,29 +31,29 @@ export interface StudentApplyRecord extends ApplyRecordBase {
 
 // 管理员角度，查看教师和学生的申请
 export interface GetTeacherApplyListResponse {
-  page: number
-  totalPage: number
-  applylist: TeacherApplyRecord[]
+  current: number
+  total: number
+  records: TeacherApplyRecord[]
 }
 
 export interface GetStudentApplyListResponse {
-  page: number
-  totalPage: number
-  applylist: StudentApplyRecord[]
+  current: number
+  total: number
+  records: StudentApplyRecord[]
 }
 
 // 教师角度，查看自己的申请
 export interface GetApplyListByTeacherResponse {
-  page: number
-  totalPage: number
-  applylist: Omit<TeacherApplyRecord, 'username'>[]
+  current: number
+  total: number
+  records: Omit<TeacherApplyRecord, 'username'>[]
 }
 
 // 学生角度，查看自己的申请
 export interface GetApplyListByStudentResponse {
-  page: number
-  totalPage: number
-  applylist: Omit<StudentApplyRecord, 'username'>[]
+  current: number
+  total: number
+  records: Omit<StudentApplyRecord, 'username'>[]
 }
 
 
@@ -95,13 +95,13 @@ export interface UpdateLabStatusRequest {
 export const SystemManagerApplyApi = {
 
   /** @description 获取申请列表(教师授课) */
-  getTeacherApplyList: (page: number = 1, num: number = 20) => instance.get<GetTeacherApplyListResponse>(`/apply/getTApply?page=${page}&num=${num}`),
+  getTeacherApplyList: (page: number = 1, num: number = 20) => instance.post<GetTeacherApplyListResponse>(`/apply/getTApply`, JSON.stringify({ page, num })),
 
   /** @description 审批并发放实验室(教师授课) */
-  examineTeacherApply: (data: ExamineApplyRequest) => instance.post<ExamineApplyRequest, {}>('/apply/examineTApply', data),
+  examineTeacherApply: (data: ExamineApplyRequest) => instance.post<ExamineApplyRequest, {}>('/apply/examineTApply', JSON.stringify(data)),
 
   /** @description 获取申请列表(学生借用) */
-  getStudentApplyList: (page: number = 1, num: number = 20) => instance.get<GetStudentApplyListResponse>(`/apply/getSApply?page=${page}&num=${num}`),
+  getStudentApplyList: (page: number = 1, num: number = 20) => instance.post<GetStudentApplyListResponse>(`/apply/getSApply`, JSON.stringify({ page, num })),
 
   /** @description 审批并发放实验室(学生借用) */
   examineStudentApply: (data: ExamineApplyRequest) => instance.post<ExamineApplyRequest, {}>('/apply/examineSApply', data),
@@ -111,7 +111,7 @@ export const SystemManagerApplyApi = {
 export const TeacherApplyApi = {
 
   /** @description 获取当前老师所申请的实验室 */
-  getApplyList: (page: number = 1, num: number = 20) => instance.get<GetApplyListByTeacherResponse>(`/apply/getClassApply?page=${page}&num=${num}`),
+  getApplyList: (page: number = 1, num: number = 20) => instance.post<GetApplyListByTeacherResponse>(`/apply/getClassApply`,  JSON.stringify({ page, num })),
 
   /** @description 申请授课实验室 */
   applyLab: (data: TeacherApplyLabRequest) => instance.post<TeacherApplyLabRequest, {}>('/apply/applyClassLab', data),
@@ -127,7 +127,7 @@ export const TeacherApplyApi = {
 export const StudentApplyApi = {
 
   /** @description 获取当前学生所申请的实验室 */
-  getApplyList: (page: number = 1, num: number = 20) => instance.get<GetApplyListByStudentResponse>(`/apply/getStuLabApply?page=${page}&num=${num}`),
+  getApplyList: (page: number = 1, num: number = 20) => instance.post<GetApplyListByStudentResponse>(`/apply/getStuLabApply`, JSON.stringify({ page, num })),
 
   /** @description 申请使用实验室 */
   applyLab: (data: StudentApplyLabRequest) => instance.post<StudentApplyLabRequest, {}>('/apply/applyStuLab', data),

@@ -8,27 +8,27 @@ export interface Semester {
 
 export interface GetUsersByFiltersRequest {
   auth?: Omit<IUserAuth, IUserAuth.SystemManager>
-  UUID?: string
+  uuid?: string
   username?: string
   major?: string
-  class?: string
+  classnum?: string
   page?: number
   num?: number
 }
 
 export interface GetUsersByFiltersResponse {
-  page: number
-  totalPage: number
-  userlist: User[]
+  current: number
+  total: number
+  records: User[]
 }
 
 export type AddUserRequest =
-  | Omit<Teacher, 'UUID'>
-  | Omit<Student, 'UUID'>
-  | Omit<LabTechnician, 'UUID'>
+  | Omit<Teacher, 'uuid'>
+  | Omit<Student, 'uuid'>
+  | Omit<LabTechnician, 'uuid'>
 
 export interface DeleteUserRequest {
-  UUID: string[]
+  uuid: string[]
 }
 
 
@@ -46,7 +46,7 @@ export interface LoginResponse {
 }
 
 export interface ResetPasswordRequest {
-  UUID: string
+  uuid: string
 }
 
 export interface ImportUsersRequest {
@@ -57,14 +57,14 @@ export interface ImportUsersRequest {
 const userApi = {
   getUsersByFilters: ({
     auth = IUserAuth.LabTechnician,
-    UUID = '',
+    uuid = '',
     username = '',
     major = '',
-    class: className = '',
+    classnum,
     page = 1,
     num = 20
   }: GetUsersByFiltersRequest) => {
-    const requestData = { auth, UUID, username, major, class: className, page, num }
+    const requestData = JSON.stringify({ auth, uuid, username, major, classnum, page, num })
     return instance.post<GetUsersByFiltersRequest, GetUsersByFiltersResponse>('/user/getUsers', requestData)
   },
   addUser: (data: AddUserRequest) => instance.post<AddUserRequest, {}>('/user/addUser', data),
