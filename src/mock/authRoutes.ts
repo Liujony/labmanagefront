@@ -47,7 +47,7 @@ export const LabTechnicianRouter: RouteRecordRaw[] = [
   {
     path: 'repair',
     name: 'repair',
-    component: () => import('@/views/labTechnician/Repair.vue'),
+    component: () => import('@/views/labTechnician/repair/index.vue'),
     meta: {
       title: '实验室维修管理',
       icon: 'repair',
@@ -70,7 +70,7 @@ export const TeacherRouter: RouteRecordRaw[] = [
   {
     path: 'equipmentRepair',
     name: 'equipmentRepair',
-    component: () => import('@/views/teacher/EquipmentRepair.vue'),
+    component: () => import('@/views/teacher/equipmentRepair/index.vue'),
     meta: {
       title: '实验室设备保修管理',
       icon: 'repair',
@@ -83,7 +83,7 @@ export const StudentRouter: RouteRecordRaw[] = [
   {
     path: 'labApply',
     name: 'labApply',
-    component: () => import('@/views/student/LabApply.vue'),
+    component: () => import('@/views/student/labApply/index.vue'),
     meta: {
       title: '实验室申请',
       icon: 'lab',

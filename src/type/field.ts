@@ -17,6 +17,7 @@ export type Field = {
   width?: number
   isId?: boolean
   isNumber?: boolean
+  isDate?: boolean
   creationRequired?: boolean
   updateRequired?: boolean
   editable?: boolean
@@ -31,6 +32,30 @@ export const authOption = [
   { label: '教师', value: IUserAuth.Teacher },
   { label: '实验员', value: IUserAuth.LabTechnician },
   { label: '学生', value: IUserAuth.Student },
+]
+
+export const labTypeOption = [
+  { label: '软件实验室', value: '软件实验室' },
+  { label: '硬件实验室', value: '硬件实验室' },
+  { label: '计算机网络实验室', value: '计算机网络实验室' },
+  { label: '物联网实验室', value: '物联网实验室' },
+  { label: '计算机硬件实验室', value: '计算机硬件实验室' },
+]
+
+export const sectionOption = [
+  { label: '1-2', value: '1-2' },
+  { label: '3-4', value: '3-4' },
+  { label: '5-6', value: '5-6' },
+  { label: '7-8', value: '7-8' },
+  { label: '9-10', value: '9-10' },
+]
+
+export const dayOption = [
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
+  { label: '3', value: 3 },
+  { label: '4', value: 4 },
+  { label: '5', value: 5 },
 ]
 
 

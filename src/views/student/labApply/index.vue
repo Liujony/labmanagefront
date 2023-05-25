@@ -7,23 +7,23 @@
         </el-button>
       </el-row>
       <el-card>
-        <teacher-apply-table></teacher-apply-table>
+        <student-apply-table></student-apply-table>
       </el-card>
     </el-col>
   </el-row>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, provide, reactive, ref } from 'vue'
-import TeacherApplyTable from './teacherApplyTable.vue'
-import { ElMessage, type FormInstance } from 'element-plus/lib/components/index.js'
-import { type GetTeacherApplyListResponse, TeacherApplyApi, type GetApplyListByTeacherResponse, type TeacherApplyLabRequest, type DeleteApplyRequest } from '@/api/apply'
-import { TEACHER_LAB_APPLY_INJECTION_KEY } from '@/context/teacherLabApply'
+import { onBeforeMount, provide, ref } from 'vue'
+import studentApplyTable from './studentApplyTable.vue'
+import { ElMessage } from 'element-plus/lib/components/index.js'
+import { StudentApplyApi, type StudentApplyLabRequest, type DeleteApplyRequest, type GetApplyListByStudentResponse, type GetStudentApplyListResponse, type UpdateLabStatusRequest } from '@/api/apply'
+import { STUDENT_LAB_APPLY_INJECTION_KEY } from '@/context/studentLabApply'
 
 const pageSize = ref(20)
 const curPage = ref(1)
 const total = ref(1)
-const data = ref([] as GetApplyListByTeacherResponse['records'])
+const data = ref([] as GetApplyListByStudentResponse['records'])
 const createFormVisible = ref(false)
 const hideCreateForm = () => {
   createFormVisible.value = false
@@ -32,25 +32,25 @@ const hideCreateForm = () => {
 const getApplyList = async () => {
   const page = curPage.value
   const num = pageSize.value
-  const { total: totalNum, current, records } = (await TeacherApplyApi.getApplyList(page, num)) as unknown as GetTeacherApplyListResponse
+  const { total: totalNum, current, records } = (await StudentApplyApi.getApplyList(page, num)) as unknown as GetStudentApplyListResponse
   console.log(totalNum, current, records)
   total.value = totalNum
   curPage.value = current
   data.value = records
 }
 
-const createApply = async (data: TeacherApplyLabRequest) => {
+const createApply = async (data: StudentApplyLabRequest) => {
   try {
-    await TeacherApplyApi.applyLab(data)
+    await StudentApplyApi.applyLab(data)
   } catch (err) {
     ElMessage.error('修改失败！')
   }
   getApplyList()
 }
 
-const updateApply = async (data: TeacherApplyLabRequest & { id: number }) => {
+const updateApply = async (data: StudentApplyLabRequest & { id: number }) => {
   try {
-    await TeacherApplyApi.updateApply(data)
+    await StudentApplyApi.updateApply(data)
   } catch (err) {
     ElMessage.error('修改失败！')
   }
@@ -59,9 +59,18 @@ const updateApply = async (data: TeacherApplyLabRequest & { id: number }) => {
 
 const deleteApply = async (data: DeleteApplyRequest) => {
   try {
-    await TeacherApplyApi.deleteApply(data)
+    await StudentApplyApi.deleteApply(data)
   } catch (err) {
     ElMessage.error('删除失败！')
+  }
+  getApplyList()
+}
+
+const finishApply = async (data: UpdateLabStatusRequest) => {
+  try {
+    await StudentApplyApi.updateLabStatus(data)
+  } catch (err) {
+    ElMessage.error('更改状态失败！')
   }
   getApplyList()
 }
@@ -82,7 +91,7 @@ onBeforeMount(() => {
 }),
 
 console.log('data', data)
-provide(TEACHER_LAB_APPLY_INJECTION_KEY, {
+provide(STUDENT_LAB_APPLY_INJECTION_KEY, {
   pageSize,
   curPage,
   total,
@@ -93,6 +102,7 @@ provide(TEACHER_LAB_APPLY_INJECTION_KEY, {
   createApply,
   updateApply,
   deleteApply,
+  finishApply,
   createFormVisible,
   hideCreateForm,
 })

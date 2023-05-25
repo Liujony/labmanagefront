@@ -45,53 +45,16 @@ export const field = [
     ]
   },
   {
-    prop: 'classnum',
-    label: '班级',
-    fixed: false,
-    creationRequired: true,
-    updateRequired: true,
-    editable: true,
-    rule: [
-      { required: true, message: '请输入班级', trigger: 'blur' },
-    ]
-  },
-  {
-    prop: 'stunum',
-    label: '上课人数',
+    prop: 'week',
+    label: '周次',
     fixed: false,
     creationRequired: true,
     updateRequired: true,
     editable: true,
     isNumber: true,
     rule: [
-      { required: true, message: '请输入上课人数', trigger: 'blur' },
-      { type: 'number', message: '请输入整数', trigger: 'blur' }
-    ]
-  },
-  {
-    prop: 'startweek',
-    label: '起始周次',
-    fixed: false,
-    creationRequired: true,
-    updateRequired: true,
-    editable: true,
-    isNumber: true,
-    rule: [
-      { required: true, message: '请输入起始周次', trigger: 'blur' },
+      { required: true, message: '请输入周次', trigger: 'blur' },
       { validator: checkWeek, trigger: 'blur' }
-    ]
-  },
-  {
-    prop: 'endweek',
-    label: '结束周次',
-    fixed: false,
-    creationRequired: true,
-    updateRequired: true,
-    editable: true,
-    isNumber: true,
-    rule: [
-      { required: true, message: '请输入结束周次', trigger: 'blur' },
-      { validator: checkWeek, trigger: 'blur' },
     ]
   },
   {
@@ -120,15 +83,27 @@ export const field = [
     options: sectionOption
   },
   {
+    prop: 'reason',
+    label: '申请理由',
+    fixed: false,
+    creationRequired: true,
+    updateRequired: true,
+    editable: true,
+    rule: [
+      { required: true, message: '请输入申请理由', trigger: 'blur' },
+    ]
+  },
+  {
     prop: 'status',
     label: '状态',
     fixed: false,
     updateRequired: false,
     editable: false,
     options: [
-      { label: '未排课', value: '审核中'},
-      { label: '已排课', value: '通过' },
-      { label: '不通过', value: '不通过' },
+      { label: '审核中', value: '审核中'},
+      { label: '审核通过', value: '审核通过' },
+      { label: '审核不通过', value: '审核不通过' },
+      { label: '使用完毕', value: '使用完毕' },
     ]
   },
   {

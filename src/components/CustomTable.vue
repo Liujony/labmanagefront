@@ -162,8 +162,8 @@ const pageSize = ref(20)
 
 const id = computed(() => (props.fields.filter(field => field.isId))[0].prop)
 const visibleFields = computed(() => props.fields.filter(field => !field.invisible))
-const creationFields = computed(() => props.fields.filter(field => !!field.creationRequired))
 const editFields = computed(() => props.fields.filter(field => !!field.editable))
+const creationFields = computed(() => props.fields.filter(field => !!field.creationRequired))
 const createDialogTitle = computed(() => `添加${props.dialogTitle}`)
 const editDialogTitle = computed(() => `修改${props.dialogTitle}`)
 
@@ -176,10 +176,10 @@ let createForm = reactive(initForm)
 let editForm = ref(props.fields)
 
 const createFormElem = ref<FormInstance | undefined>()
-const editFormElem = ref<FormInstance | undefined>()
 const createFormVisible = ref(false)
-const editFormVisible = ref(false)
 const createFormRules = computed(() => creationFields.value.reduce((rules, field) => ({ ...rules, [field.prop]: field.rule }), {} as Record<string, any>))
+const editFormElem = ref<FormInstance | undefined>()
+const editFormVisible = ref(false)
 const editFormRules = computed(() => editFields.value.reduce((rules, field) => ({ ...rules, [field.prop]: field.rule }), {} as Record<string, any>))
 
 const tableData = ref(props.data ?? [])

@@ -1,4 +1,4 @@
-import type { GetApplyListByTeacherResponse, TeacherApplyLabRequest } from "@/api/apply"
+import type { DeleteApplyRequest, GetApplyListByTeacherResponse, TeacherApplyLabRequest } from "@/api/apply"
 import type { Ref, InjectionKey } from "vue"
 
 interface teacherLabApplyContext {
@@ -10,7 +10,12 @@ interface teacherLabApplyContext {
   handlePageChange: (page: number) => void
 
   getApplyList: () => Promise<void>
-  updateApply: (TeacherApplyLabRequest & { id: number }) => Promise<void>
+  createApply: (data: TeacherApplyLabRequest) => Promise<void>
+  updateApply: (data: TeacherApplyLabRequest & { id: number }) => Promise<void>
+  deleteApply: (data: DeleteApplyRequest) => Promise<void>
+
+  createFormVisible: Ref<boolean>
+  hideCreateForm: () => void
 }
 
-export const TEACHER_LAB_APPLY_INJECTION_KEY: InjectionKey<teacherLabApplyContext> = Symbol('experimentSchedule') 
+export const TEACHER_LAB_APPLY_INJECTION_KEY: InjectionKey<teacherLabApplyContext> = Symbol('teacherLabApply') 

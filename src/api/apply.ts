@@ -4,13 +4,13 @@ import instance from '@/api/index'
 export type ApplyStatus = '审核中' | '审核通过' | '审核不通过'
 export type WeekDay = 1 | 2 | 3 | 4 | 5
 export type SectionSlot = '1-2' | '3-4' | '5-6' | '7-8' | '9-10'
-
+export type LabType = '软件实验室' | '硬件实验室' | '计算机网络实验室'
 // 已申请的记录
 export interface ApplyRecordBase {
   id: number
   username: string
   semester: string
-  labtype: string
+  labtype: LabType
   day: WeekDay
   section: SectionSlot
   status: ApplyStatus
@@ -66,7 +66,7 @@ export interface ExamineApplyRequest {
 
 export interface ApplyLabBase {
   semester: string
-  labtype: string
+  labtype: LabType
   day: WeekDay
   section: SectionSlot
 }

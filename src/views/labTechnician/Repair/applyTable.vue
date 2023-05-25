@@ -6,9 +6,7 @@
             :data="tableData"
             style="100%"
             fit
-            @selection-change="handleSelectionChange"
           >
-            <el-table-column type="selection" width="55" />
             <el-table-column 
               v-for="{prop, label, fixed, width} in visibleFields"
               :key="label"
@@ -18,21 +16,21 @@
               :width="width"
               :formatter="formatter"
             ></el-table-column>
-            <el-table-column fixed="right" label="操作" width="180">
+            <el-table-column fixed="right" label="操作" width="120">
               <template #default="scope">
-                <el-button link type="primary" @click="() => handleEdit(scope.row)">编辑</el-button>
-                <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
+                <!--  -->
+                <el-row>
+                  <el-col>
+                    <el-button type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status !== '已维修'">修改状态</el-button>
+                  </el-col>
+                </el-row>
               </template>
             </el-table-column>
           </el-table>
       </el-col>
     </el-row>
     <el-row style="margin-top: 20px;">
-      <el-col :span="8">
-        <el-button type="primary" @click="handleDelSelection">批量删除</el-button>
-      </el-col>
-      <el-col :span="16" justify="start">
-        <div class="pagination-container">
+      <div class="pagination-container">
         <el-pagination 
           background
           layout="prev, pager, next, sizes"
@@ -43,27 +41,25 @@
           @size-change="handlePageSizeChange"
           @current-change="handlePageChange"
         />
-        </div>
-      </el-col>
+      </div>
     </el-row>
 
     <el-dialog v-model="editFormVisible" :title="editDialogTitle">
       <el-form :model="editForm" :rules="editFormRules" ref="editFormElem" label-width="100px">
-        <el-form-item :label="label" :prop="prop" :key="prop" v-for="{ label, prop, isNumber, values, options, editable } in editFields">
-          <el-radio-group v-model="editForm[prop]" v-if="values" :disabled="!editable">
-            <el-radio :label="value" v-for="value in values" :key="value"></el-radio>
-          </el-radio-group>
-          <el-select v-model="editForm[prop]" v-else-if="options" :disabled="!editable">
+        <el-form-item label="id" prop="id">
+          <el-input v-model="editForm.id" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="editForm.status">
             <el-option
-              v-for="{ label, value } in options"
+              v-for="{ label, value } in repairStatusOptions"
               :key="label"
               :label="label"
               :value="value"
             />
           </el-select>
-          <el-input v-model.number="editForm[prop]" autocomplete="off" :disabled="!editable" v-else-if="isNumber" />
-          <el-input v-model="editForm[prop]" autocomplete="off" :disabled="!editable" v-else />
         </el-form-item>
+
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -80,51 +76,52 @@
 <script setup lang="ts">
 import { ref, computed, watch, inject } from 'vue'
 import type { Field } from '@/type/field'
-import { authFieldMap, isOption } from '@/type/field'
+import { isOption, type Option } from '@/type/field'
 import type { FormInstance } from 'element-plus/lib/components/form/index.js'
 import type { TableColumnCtx } from 'element-plus/lib/components/index.js'
-import { USER_MANAGE_INJECTION_KEY } from '@/context/userManage'
 import ElMessage from 'element-plus/lib/components/message/index.js'
-import type { User } from '@/type/user'
+import { field, repairStatusOption } from './field'
+import { type TeacherLabDetail } from '@/api/lab'
+import { type UpdateApplyRequest, type LabsList } from '@/api/repair'
+import { LAB_TECHNICIAN_REPAIR_INJECTION_KEY } from '@/context/labTechnicianRepair'
 
 const {
-  auth,
   data,
   pageSize,
   curPage,
   total,
   handlePageSizeChange,
   handlePageChange,
-
-  updateUser,
-  deleteUser
-} = inject(USER_MANAGE_INJECTION_KEY)!
+  updateApply,
+} = inject(LAB_TECHNICIAN_REPAIR_INJECTION_KEY)!
 
 // 配置项
-const dialogTitle = '用户'
-const fields = computed(() => authFieldMap[auth.value])
+const fields = field
+const repairStatusOptions = computed(() => repairStatusOption.slice(1))
 
-const id = computed(() => (fields.value.filter(field => field.isId))[0].prop)
-const visibleFields = computed(() => fields.value.filter(field => !field.invisible))
-const editFields = computed(() => fields.value.filter(field => !!field.updateRequired))
-const editDialogTitle = computed(() => `修改${dialogTitle}`)
+const id = computed(() => (fields.filter(field => field.isId))[0].prop)
+const visibleFields = computed(() => fields.filter(field => !field.invisible))
+const editFields = computed(() => fields.filter(field => !!field.updateRequired))
+const editDialogTitle = '修改报修申请单'
 
-let editForm = ref(fields)
+let editForm = ref<Record<string, any>>({})
 
 const editFormElem = ref<FormInstance | undefined>()
 const editFormVisible = ref(false)
 const editFormRules = computed(() => editFields.value.reduce((rules, field) => ({ ...rules, [field.prop]: field.rule }), {} as Record<string, any>))
 
 const tableData = ref(data)
-const selectionData = ref([] as User[])
 const oldData = ref<Record<string, any> | null>(null)
+const labList = ref<Option[]>([])
 
 const formatter = (row: any, column: TableColumnCtx<Field>) => {
   const prop = column.property
-  const fieldConfig: Field = fields.value.find((field) => field.prop === prop) || {} as Field
+  const fieldConfig: Field = fields.find((field) => field.prop === prop) || {} as Field
   if ('options' in fieldConfig) {
     const options = fieldConfig.options!
     return options.find(option => row[prop] === option.value)?.label
+  } else if (prop === 'labid') {
+    return labList.value.find(option => row[prop] === option.value)?.label
   } else return row[prop]
 }
 
@@ -144,50 +141,48 @@ function handleEdit(row: any) {
         editFormData[prop] = option.value
         return
       }
-    } 
-    editFormData[prop] = rowData[prop]
+    } else editFormData[prop] = rowData[prop]
   })
   oldData.value = Object.assign({}, editFormData) as any
   editForm = ref(editFormData as any)
   editFormVisible.value = true
+  
+  const { semester, labtype, stunum, startweek, endweek, day, section } = row
+  console.log(row)
+  const labCondition: TeacherLabDetail = {
+    semester,
+    labtype,
+    stunum,
+    startweek,
+    endweek,
+    day,
+    section
+  }
+  console.log(labCondition)
+  // labApi.getLabsForTeacher(labCondition)
 }
 
 const handleUpdate = async () => {
   try {
-    if (!editFormElem.value || !updateUser) return
+    if (!editFormElem.value || !updateApply) return
     const isValid = await editFormElem.value.validate((valid: boolean) => !!valid)
     if(!isValid) return
+    // if (editForm.value.startweek > editForm.value.endweek) {
+    //   ElMessage.error('起始周次不能晚于结束周次！')
+    //   return
+    // }
   
     const data = Object.assign({}, editForm.value)
     for(const [key, val] of Object.entries(data)) {
       if(isOption(val)) data[key] = val.value
     }
 
-    console.log('?! data', data)
-    await updateUser(data)
+    await updateApply(data as UpdateApplyRequest)
     ElMessage.success('修改成功')
   } catch (err: any) {
     ElMessage.error(err)
   }
-
   editFormVisible.value = false
-}
-
-function handleDel(id: string) {
-  if (!deleteUser) return
-  deleteUser({
-    uuid: [id]
-  })
-}
-
-function handleSelectionChange(selection: User[]) {
-  selectionData.value = selection
-}
-function handleDelSelection() {
-  if (!deleteUser) return
-  deleteUser({
-    uuid: [...selectionData.value.map((item: User) => item.uuid)]
-  })
 }
 
 watch(
@@ -196,6 +191,7 @@ watch(
     tableData.value = data.value ?? []
   }
 )
+
 </script>
 
 <style scoped>

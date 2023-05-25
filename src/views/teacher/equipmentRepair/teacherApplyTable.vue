@@ -21,7 +21,7 @@
                 <!--  -->
                 <el-row>
                   <el-col align="end">
-                    <el-button link type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status === '审核中'">编辑</el-button>
+                    <el-button link type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status === '维修申报中'">编辑</el-button>
                     <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
                   </el-col>
                 </el-row>
@@ -47,8 +47,15 @@
 
     <el-dialog v-model="createFormVisible" :title="createDialogTitle">
       <el-form :model="createForm" :rules="createFormRules" ref="createFormElem" label-width="100px">
-        <el-form-item label="学期" >
-          <el-input v-model="createForm.semester" disabled></el-input>
+        <el-form-item label="实验室" >
+          <el-select v-model="createForm.labid">
+            <el-option
+              v-for="{ label, value } in labList"
+              :key="label"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item 
           :label="label" 
@@ -83,6 +90,16 @@
 
     <el-dialog v-model="editFormVisible" :title="editDialogTitle">
       <el-form :model="editForm" :rules="editFormRules" ref="editFormElem" label-width="100px">
+        <el-form-item label="实验室" >
+          <el-select v-model="editForm.labid">
+            <el-option
+              v-for="{ label, value } in labList"
+              :key="label"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item :label="label" :prop="prop" :key="prop" v-for="{ label, prop, isNumber, values, options, editable } in editFields">
           <el-radio-group v-model="editForm[prop]" v-if="values" :disabled="!editable">
             <el-radio :label="value" v-for="value in values" :key="value"></el-radio>
@@ -113,17 +130,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue'
+import { ref, computed, watch, inject, onBeforeMount } from 'vue'
 import type { Field } from '@/type/field'
 import { isOption, type Option } from '@/type/field'
 import type { FormInstance } from 'element-plus/lib/components/form/index.js'
 import type { TableColumnCtx } from 'element-plus/lib/components/index.js'
 import ElMessage from 'element-plus/lib/components/message/index.js'
 import { field } from './field'
-import { type TeacherLabDetail } from '@/api/lab'
+import labApi, { type TeacherLabDetail } from '@/api/lab'
 import { TEACHER_LAB_APPLY_INJECTION_KEY } from '@/context/teacherLabApply'
-import semesterApi, { type Semester, type SemesterList } from '@/api/semester'
+import semesterApi, { type SemesterList } from '@/api/semester'
 import type { TeacherApplyLabRequest } from '@/api/apply'
+import { TEACHER_REPAIR_APPLY_INJECTION_KEY } from '@/context/teacherRepairApply'
+import { teacherRepairApi, type ApplyRepairRequest, type UpdateApplyRequest, type LabsList, type Lab } from '@/api/repair'
 
 const {
   data,
@@ -139,7 +158,7 @@ const {
 
   createFormVisible,
   hideCreateForm,
-} = inject(TEACHER_LAB_APPLY_INJECTION_KEY)!
+} = inject(TEACHER_REPAIR_APPLY_INJECTION_KEY)!
 
 // 配置项
 const fields = field
@@ -147,10 +166,10 @@ const fields = field
 const id = computed(() => (fields.filter(field => field.isId))[0].prop)
 const visibleFields = computed(() => fields.filter(field => !field.invisible))
 const editFields = computed(() => fields.filter(field => !!field.updateRequired))
-const editDialogTitle = '修改实验室申请单'
+const editDialogTitle = '修改报修申请单'
 
 const creationFields = computed(() => fields.filter(field => !!field.creationRequired))
-const createDialogTitle = '申请实验室'
+const createDialogTitle = '申请报修'
 
 const initForm = creationFields.value.reduce((formObj, item) => {
   formObj[item.prop] = item.default ?? ''
@@ -171,7 +190,7 @@ const editFormRules = computed(() => editFields.value.reduce((rules, field) => (
 
 const tableData = ref(data)
 const oldData = ref<Record<string, any> | null>(null)
-const semesterList = ref<string[]>([])
+const labList = ref<Option[]>([])
 
 const formatter = (row: any, column: TableColumnCtx<Field>) => {
   const prop = column.property
@@ -179,6 +198,8 @@ const formatter = (row: any, column: TableColumnCtx<Field>) => {
   if ('options' in fieldConfig) {
     const options = fieldConfig.options!
     return options.find(option => row[prop] === option.value)?.label
+  } else if (prop === 'labid') {
+    return labList.value.find(option => row[prop] === option.value)?.label
   } else return row[prop]
 }
 
@@ -200,8 +221,7 @@ function handleEdit(row: any) {
         editFormData[prop] = option.value
         return
       }
-    } 
-    editFormData[prop] = rowData[prop]
+    } else editFormData[prop] = rowData[prop]
   })
   oldData.value = Object.assign({}, editFormData) as any
   editForm = ref(editFormData as any)
@@ -219,12 +239,13 @@ function handleEdit(row: any) {
     section
   }
   console.log(labCondition)
+  getLabList()
   // labApi.getLabsForTeacher(labCondition)
 }
 
-const getSemesterList = async () => {
-  const { semesters } = (await semesterApi.getAllSemester()) as unknown as SemesterList
-  semesterList.value = semesters
+const getLabList = async () => {
+  const labs = await teacherRepairApi.getAllLab() as unknown as LabsList
+    labList.value = labs.map(({ id, name }) => ({ label: name, value: id }))
 }
 
 const handleCreate = async() => {
@@ -236,8 +257,8 @@ const handleCreate = async() => {
     //   ElMessage.error('起始周次不能晚于结束周次！')
     //   return
     // }
-  
-    await createApply(createForm.value as TeacherApplyLabRequest)
+
+    await createApply(createForm.value as ApplyRepairRequest)
     ElMessage.success('添加成功')
   } catch (err: any) {
     ElMessage.success(err)
@@ -262,8 +283,7 @@ const handleUpdate = async () => {
       if(isOption(val)) data[key] = val.value
     }
 
-    console.log('?! data', data)
-    await updateApply(data as TeacherApplyLabRequest & { id: number })
+    await updateApply(data as UpdateApplyRequest)
     ElMessage.success('修改成功')
   } catch (err: any) {
     ElMessage.error(err)
@@ -284,15 +304,16 @@ watch(
     tableData.value = data.value ?? []
   }
 )
+
 watch(
   () => createFormVisible.value,
   async (isVisible) => {
     if (!isVisible) return
-    const { semester } = await semesterApi.getCurrentSemester() as unknown as Semester
-    createForm.value.semester = semester
+    getLabList()
   }
 )
 
+onBeforeMount(getLabList)
 </script>
 
 <style scoped>

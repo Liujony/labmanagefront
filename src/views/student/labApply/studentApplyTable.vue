@@ -6,9 +6,7 @@
             :data="tableData"
             style="100%"
             fit
-            @selection-change="handleSelectionChange"
           >
-            <el-table-column type="selection" width="55" />
             <el-table-column 
               v-for="{prop, label, fixed, width} in visibleFields"
               :key="label"
@@ -20,19 +18,21 @@
             ></el-table-column>
             <el-table-column fixed="right" label="操作" width="180">
               <template #default="scope">
-                <el-button link type="primary" @click="() => handleEdit(scope.row)">编辑</el-button>
-                <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
+                <!--  -->
+                <el-row>
+                  <el-col align="end">
+                    <el-button link type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status === '审核中'">编辑</el-button>
+                    <el-button type="primary" @click="() => handleFinish(scope.row[id])" v-if="scope.row.status === '审核通过'">使用完毕</el-button>
+                    <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
+                  </el-col>
+                </el-row>
               </template>
             </el-table-column>
           </el-table>
       </el-col>
     </el-row>
     <el-row style="margin-top: 20px;">
-      <el-col :span="8">
-        <el-button type="primary" @click="handleDelSelection">批量删除</el-button>
-      </el-col>
-      <el-col :span="16" justify="start">
-        <div class="pagination-container">
+      <div class="pagination-container">
         <el-pagination 
           background
           layout="prev, pager, next, sizes"
@@ -43,9 +43,44 @@
           @size-change="handlePageSizeChange"
           @current-change="handlePageChange"
         />
-        </div>
-      </el-col>
+      </div>
     </el-row>
+
+    <el-dialog v-model="createFormVisible" :title="createDialogTitle">
+      <el-form :model="createForm" :rules="createFormRules" ref="createFormElem" label-width="100px">
+        <el-form-item label="学期" >
+          <el-input v-model="createForm.semester" disabled></el-input>
+        </el-form-item>
+        <el-form-item 
+          :label="label" 
+          :prop="prop" 
+          :key="label"
+          v-for="{ label, prop, isNumber, values, options } in creationFields"
+        >
+          <el-radio-group v-model="createForm[prop]" v-if="values">
+            <el-radio :label="value" v-for="value in values" :key="value"></el-radio>
+          </el-radio-group>
+          <el-select v-model="createForm[prop]" v-else-if="options">
+              <el-option
+                v-for="{ label, value } in options"
+                :key="label"
+                :label="label"
+                :value="value"
+              />
+          </el-select>
+          <el-input v-model.number="createForm[prop]" autocomplete="off" v-else-if="isNumber" />
+          <el-input v-model="createForm[prop]" autocomplete="off" v-else />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" @click="handleCreate">
+            确定
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="editFormVisible" :title="editDialogTitle">
       <el-form :model="editForm" :rules="editFormRules" ref="editFormElem" label-width="100px">
@@ -64,6 +99,7 @@
           <el-input v-model.number="editForm[prop]" autocomplete="off" :disabled="!editable" v-else-if="isNumber" />
           <el-input v-model="editForm[prop]" autocomplete="off" :disabled="!editable" v-else />
         </el-form-item>
+
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -80,15 +116,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, inject } from 'vue'
 import type { Field } from '@/type/field'
-import { authFieldMap, isOption } from '@/type/field'
+import { isOption, type Option } from '@/type/field'
 import type { FormInstance } from 'element-plus/lib/components/form/index.js'
 import type { TableColumnCtx } from 'element-plus/lib/components/index.js'
-import { USER_MANAGE_INJECTION_KEY } from '@/context/userManage'
 import ElMessage from 'element-plus/lib/components/message/index.js'
-import type { User } from '@/type/user'
+import { field } from './field'
+import { type StudentLabDetail } from '@/api/lab'
+import semesterApi, { type Semester, type SemesterList } from '@/api/semester'
+import type { StudentApplyLabRequest } from '@/api/apply'
+import { STUDENT_LAB_APPLY_INJECTION_KEY } from '@/context/studentLabApply'
 
 const {
-  auth,
   data,
   pageSize,
   curPage,
@@ -96,32 +134,50 @@ const {
   handlePageSizeChange,
   handlePageChange,
 
-  updateUser,
-  deleteUser
-} = inject(USER_MANAGE_INJECTION_KEY)!
+  createApply,
+  updateApply,
+  deleteApply,
+  finishApply,
+  
+  createFormVisible,
+  hideCreateForm,
+} = inject(STUDENT_LAB_APPLY_INJECTION_KEY)!
 
 // 配置项
-const dialogTitle = '用户'
-const fields = computed(() => authFieldMap[auth.value])
+const fields = field
 
-const id = computed(() => (fields.value.filter(field => field.isId))[0].prop)
-const visibleFields = computed(() => fields.value.filter(field => !field.invisible))
-const editFields = computed(() => fields.value.filter(field => !!field.updateRequired))
-const editDialogTitle = computed(() => `修改${dialogTitle}`)
+const id = computed(() => (fields.filter(field => field.isId))[0].prop)
+const visibleFields = computed(() => fields.filter(field => !field.invisible))
+const editFields = computed(() => fields.filter(field => !!field.updateRequired))
+const editDialogTitle = '修改实验室申请单'
 
-let editForm = ref(fields)
+const creationFields = computed(() => fields.filter(field => !!field.creationRequired))
+const createDialogTitle = '申请实验室'
+
+const initForm = creationFields.value.reduce((formObj, item) => {
+  formObj[item.prop] = item.default ?? ''
+  return formObj
+}, {} as Record<string, any>)
+
+let editForm = ref<Record<string, any>>({})
+let createForm = ref(initForm)
+
+
+const createFormElem = ref<FormInstance | undefined>()
+const createFormRules = computed(() => creationFields.value.reduce((rules, field) => ({ ...rules, [field.prop]: field.rule }), {} as Record<string, any>))
+
 
 const editFormElem = ref<FormInstance | undefined>()
 const editFormVisible = ref(false)
 const editFormRules = computed(() => editFields.value.reduce((rules, field) => ({ ...rules, [field.prop]: field.rule }), {} as Record<string, any>))
 
 const tableData = ref(data)
-const selectionData = ref([] as User[])
 const oldData = ref<Record<string, any> | null>(null)
+const semesterList = ref<string[]>([])
 
 const formatter = (row: any, column: TableColumnCtx<Field>) => {
   const prop = column.property
-  const fieldConfig: Field = fields.value.find((field) => field.prop === prop) || {} as Field
+  const fieldConfig: Field = fields.find((field) => field.prop === prop) || {} as Field
   if ('options' in fieldConfig) {
     const options = fieldConfig.options!
     return options.find(option => row[prop] === option.value)?.label
@@ -130,7 +186,9 @@ const formatter = (row: any, column: TableColumnCtx<Field>) => {
 
 const handleCancel = () => {
   editFormVisible.value = false
+  createFormElem.value?.resetFields()
   oldData.value = null
+  hideCreateForm()
 }
 
 function handleEdit(row: any) {
@@ -150,13 +208,54 @@ function handleEdit(row: any) {
   oldData.value = Object.assign({}, editFormData) as any
   editForm = ref(editFormData as any)
   editFormVisible.value = true
+  
+  const { semester, labtype, week, day, section } = row
+  console.log(row)
+  const labCondition: StudentLabDetail = {
+    semester,
+    labtype,
+    week,
+    day,
+    section
+  }
+  console.log(labCondition)
+  // labApi.getLabsForStudent(labCondition)
+}
+
+const getSemesterList = async () => {
+  const { semesters } = (await semesterApi.getAllSemester()) as unknown as SemesterList
+  semesterList.value = semesters
+}
+
+const handleCreate = async() => {
+  try {
+    if (!createFormElem.value || !createApply) return
+    const isValid = await createFormElem.value.validate((valid: boolean) => !!valid)
+    if (!isValid) return
+    // if (createForm.value.startweek > createForm.value.endweek) {
+    //   ElMessage.error('起始周次不能晚于结束周次！')
+    //   return
+    // }
+  
+    await createApply(createForm.value as StudentApplyLabRequest)
+    ElMessage.success('添加成功')
+  } catch (err: any) {
+    ElMessage.success(err)
+  }
+
+  createFormElem.value?.resetFields()
+  createFormVisible.value = false
 }
 
 const handleUpdate = async () => {
   try {
-    if (!editFormElem.value || !updateUser) return
+    if (!editFormElem.value || !updateApply) return
     const isValid = await editFormElem.value.validate((valid: boolean) => !!valid)
     if(!isValid) return
+    // if (editForm.value.startweek > editForm.value.endweek) {
+    //   ElMessage.error('起始周次不能晚于结束周次！')
+    //   return
+    // }
   
     const data = Object.assign({}, editForm.value)
     for(const [key, val] of Object.entries(data)) {
@@ -164,38 +263,43 @@ const handleUpdate = async () => {
     }
 
     console.log('?! data', data)
-    await updateUser(data)
+    await updateApply(data as StudentApplyLabRequest & { id: number })
     ElMessage.success('修改成功')
   } catch (err: any) {
     ElMessage.error(err)
   }
-
   editFormVisible.value = false
 }
 
-function handleDel(id: string) {
-  if (!deleteUser) return
-  deleteUser({
-    uuid: [id]
+function handleDel(id: number) {
+  if (!deleteApply) return
+  deleteApply({
+    id
   })
 }
 
-function handleSelectionChange(selection: User[]) {
-  selectionData.value = selection
-}
-function handleDelSelection() {
-  if (!deleteUser) return
-  deleteUser({
-    uuid: [...selectionData.value.map((item: User) => item.uuid)]
+function handleFinish(id: number) {
+  if (!deleteApply) return
+  finishApply({
+    id,
+    status: '使用完毕'
   })
 }
-
 watch(
   () => data,
   (data) => {
     tableData.value = data.value ?? []
   }
 )
+watch(
+  () => createFormVisible.value,
+  async (isVisible) => {
+    if (!isVisible) return
+    const { semester } = await semesterApi.getCurrentSemester() as unknown as Semester
+    createForm.value.semester = semester
+  }
+)
+
 </script>
 
 <style scoped>
