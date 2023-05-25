@@ -1,7 +1,7 @@
 <template>
   <div class="blank-page-container">
     <div>
-      <img class="blank-page-img" src="public/assets/工作.png"/>
+      <img class="blank-page-img" src="/assets/工作.png"/>
     </div>
     <div>
       <h1>你好，{{ username }}</h1>
