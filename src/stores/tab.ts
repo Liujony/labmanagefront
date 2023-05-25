@@ -40,7 +40,12 @@ const useTabStore = defineStore('tab', {
       window.sessionStorage.setItem('history', JSON.stringify(this.history))
     },
     addTab (route: RouteLocationNormalizedLoaded) {
+      console.log('addTab')
       const { meta, path, query, params } = route
+      if (path === '/') {
+        router.replace('/welcome')
+        return
+      }
       const existTab = this.tabs.find(tab => tab.path === path)
       if (existTab) {
         this.activeTab = existTab
@@ -74,17 +79,20 @@ const useTabStore = defineStore('tab', {
       const isRemoveActiveTab = targetTab.path === this.activeTab?.path
       this.tabs = this.tabs.filter(tab => tab.path !== targetTab.path)
       this.history = this.history.filter(tab => tab.path !== targetTab.path)
-      if (isRemoveActiveTab) {
+      if (isRemoveActiveTab && this.history.length) {
         this.activeTab = this.history[this.history.length - 1]
         router.replace({ path: this.activeTabPath! })
       }
       this.updateSessionStorage()
+      console.log(this.tabs)
+      if (!this.tabs.length) router.replace({ path: '/welcome' })
     },
 
     removeAllTab () {
       this.tabs = []
       this.history = []
       window.sessionStorage.removeItem('tabs')
+      router.replace({ path: '/welcome' })
     },
 
     removeLeftTab (targetTab: Tab) {

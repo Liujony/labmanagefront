@@ -88,7 +88,6 @@ export const StudentRouter: RouteRecordRaw[] = [
       title: '实验室申请',
       icon: 'lab',
       routeIndex: 1
-
     }
   }
 ]

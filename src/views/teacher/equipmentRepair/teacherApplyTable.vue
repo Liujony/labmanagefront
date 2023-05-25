@@ -21,7 +21,7 @@
                 <!--  -->
                 <el-row>
                   <el-col align="end">
-                    <el-button link type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status === '维修申报中'">编辑</el-button>
+                    <el-button link type="primary" @click="() => handleEdit(scope.row)" v-if="scope.row.status === '未维修'">编辑</el-button>
                     <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
                   </el-col>
                 </el-row>
@@ -90,16 +90,6 @@
 
     <el-dialog v-model="editFormVisible" :title="editDialogTitle">
       <el-form :model="editForm" :rules="editFormRules" ref="editFormElem" label-width="100px">
-        <el-form-item label="实验室" >
-          <el-select v-model="editForm.labid">
-            <el-option
-              v-for="{ label, value } in labList"
-              :key="label"
-              :label="label"
-              :value="value"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item :label="label" :prop="prop" :key="prop" v-for="{ label, prop, isNumber, values, options, editable } in editFields">
           <el-radio-group v-model="editForm[prop]" v-if="values" :disabled="!editable">
             <el-radio :label="value" v-for="value in values" :key="value"></el-radio>
@@ -245,7 +235,8 @@ function handleEdit(row: any) {
 
 const getLabList = async () => {
   const labs = await teacherRepairApi.getAllLab() as unknown as LabsList
-    labList.value = labs.map(({ id, name }) => ({ label: name, value: id }))
+  labList.value = labs.map(({ id, name }) => ({ label: name, value: id }))
+  fields[1].options = labList.value
 }
 
 const handleCreate = async() => {

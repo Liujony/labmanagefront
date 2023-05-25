@@ -4,9 +4,9 @@ import store from '@/stores'
 import App from './App.vue'
 import router from './router'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import './assets/style.scss'
+import '../public/assets/style.scss'
 import ElementPlus from 'element-plus'
-import './assets/main.css'
+import '../public/assets/main.css'
 // import '@/permission'
 
 const app = createApp(App)

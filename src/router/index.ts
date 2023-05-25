@@ -5,6 +5,7 @@ import useUserStore from '@/stores/user'
 import { IUserAuth } from '@/type/user'
 import useRouteStore from '@/stores/route'
 import nProgress from 'nprogress'
+import BlankPage from '@/views/layout/BlankPage.vue'
 
 export interface RouteRecordConfig {
   path: string
@@ -35,8 +36,13 @@ export const layoutRoute = {
   path: '/',
   name: 'layout',
   component: () => import('@/views/layout/Layout.vue'),
+  children: [{
+    path: '/welcome',
+    name: 'welcome',
+    component: BlankPage
+  }],
   meta: {
-    title: 'Layout'
+    title: '开始'
   },
 }
 

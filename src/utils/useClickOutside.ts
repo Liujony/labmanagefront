@@ -16,9 +16,9 @@ function useClickOutside(
     document.addEventListener('click', handler)
   })
 
-  return () => {
+  onUnmounted(() => {
     document.removeEventListener('click', handler)
-  }
+  })
 }
 
 export default useClickOutside

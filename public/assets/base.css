@@ -50,7 +50,6 @@
   /* picker */
   --color-picker-text: #666666;
   --color-picker-border: #c0c0c0;
-  --el-color-primary: var(--primary);
 }
 
 /* @media (prefers-color-scheme: dark) {

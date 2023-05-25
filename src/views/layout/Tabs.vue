@@ -2,11 +2,12 @@
   <div class="tab-container">
     <el-tabs
       v-model="activeTabName"
-      :closable="!(tabs.length === 1)"
+      :closable="isClosable"
       type="border-card"
       class="tab-bar"
       @tab-click="changeTab"
       @tab-remove="removeTab"
+      @contextmenu.prevent="showContextMenu($event)" 
     >
       <el-tab-pane
         v-for="tab in tabs"
@@ -14,7 +15,7 @@
         :label="tab.title"
         :name="tab.path"
         class="tab-pane"
-        @contextmenu.prevent="showContextMenu($event, tab)"
+        data-path="tab.path"
         lazy
       >
         <el-scrollbar>
@@ -31,6 +32,7 @@
       ref="contextMenuRef"
       v-show="contextMenuVisible"
       class="contextmenu"
+      :style="{ top: contextMenuCoord.top, left: contextMenuCoord.left }"
     >
       <li @click="closeAll">关闭所有</li>
       <li @click="closeLeft">关闭左侧</li>
@@ -56,8 +58,8 @@ const contextMenuVisible = ref(false)
 const contextMenuRef = ref<HTMLElement>()
 const contextMenuTargetTab = ref<Tab>()
 const contextMenuCoord = ref({
-  left: 0,
-  top: 0
+  left: '0px',
+  top: '0px'
 })
 
 const userStore = useUserStore()
@@ -65,6 +67,10 @@ const tabStore = useTabStore()
 const tabs = computed(() => {
   console.log('computed tabs', tabStore.tabs)
   return tabStore.tabs
+})
+const isClosable = computed(() => {
+  console.log(tabs)
+  return tabs.value.length > 1 || tabs.value[0]?.path !== '/welcome' 
 })
 
 const activeTab = computed(() => {
@@ -74,17 +80,23 @@ const activeTab = computed(() => {
 
 const activeTabName = ref(activeTab.value?.path)
 
-const showContextMenu = (event: MouseEvent, tab: Tab) => {
+const showContextMenu = (event: MouseEvent) => {
   const { clientX, clientY } = event
   contextMenuCoord.value = {
-    left: clientX,
-    top: clientY
+    left: `${clientX}px`,
+    top: `${clientY}px`
   }
-  contextMenuTargetTab.value = tab
+  console.log(event.target)
+  const target = (event.target as HTMLElement).closest('[role="tab"]') as HTMLElement | null
+  if (!target) return
+  console.log(target, tabs.value.find(tab => tab.path === target.dataset.path))
+  contextMenuTargetTab.value = tabs.value.find(tab => tab.path === target.dataset.path)
   contextMenuVisible.value = true
 }
 
 const hideContextMenu = () => {
+  console.log('hide')
+  if(!contextMenuVisible.value) return
   contextMenuVisible.value = false
 }
 
@@ -113,38 +125,31 @@ const closeAll = () => {
 }
 
 const closeLeft = () => {
-  // tabStore.removeLeftTab()
+  if (!contextMenuTargetTab.value) return
+  tabStore.removeLeftTab(contextMenuTargetTab.value)
 }
 
 const closeRight = () => {
-  // tabStore.removeRightTab()
+  if (!contextMenuTargetTab.value) return
+  tabStore.removeRightTab(contextMenuTargetTab.value)
 }
 
 const closeOther = () => {
-  // tabStore.removeOtherTab()
+  if (!contextMenuTargetTab.value) return
+  // tabStore.removeOtherTab(contextMenuTargetTab.value)
 }
 
-let disconnectClickOutsideListener: Function | null = null
-watch(
-  () => contextMenuVisible.value, 
-  (isContextMenuVisible) => {
-    if (isContextMenuVisible) {
-      disconnectClickOutsideListener = useClickOutside(contextMenuRef, hideContextMenu)
-    } else {
-      disconnectClickOutsideListener?.()
-    }
-  }
-)
+useClickOutside(contextMenuRef, hideContextMenu)
 
 watch(
   () => route,
   (to) => {
-    console.log('watch route')
+    console.log('watch route', to)
     if (to.name === 'login') return
     tabStore.addTab(to)
     
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 watch(
@@ -183,6 +188,10 @@ onUnmounted(() => {
   display: inline-block;
   border-radius: 50%;
   transition: background-color 0.2s;
+}
+
+.contextmenu {
+  position: fixed;
 }
 
 .contextmenu li {
