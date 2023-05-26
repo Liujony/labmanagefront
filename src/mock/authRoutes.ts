@@ -47,7 +47,7 @@ export const LabTechnicianRouter: RouteRecordRaw[] = [
   {
     path: 'repair',
     name: 'repair',
-    component: () => import('@/views/labTechnician/repair/index.vue'),
+    component: () => import('@/views/labTechnician/Repair/index.vue'),
     meta: {
       title: '实验室维修管理',
       icon: 'repair',
