@@ -21,6 +21,7 @@
             <el-table-column fixed="right" label="操作" width="180">
               <template #default="scope">
                 <el-button link type="primary" @click="() => handleEdit(scope.row)">编辑</el-button>
+                <el-button link type="primary" @click="() => resetPsw(scope.row[id])">重置密码</el-button>
                 <el-button link type="danger" @click="() => handleDel(scope.row[id])">删除</el-button>
               </template>
             </el-table-column>
@@ -97,7 +98,8 @@ const {
   handlePageChange,
 
   updateUser,
-  deleteUser
+  deleteUser,
+  resetPassword
 } = inject(USER_MANAGE_INJECTION_KEY)!
 
 // 配置项
@@ -177,6 +179,13 @@ function handleDel(id: string) {
   if (!deleteUser) return
   deleteUser({
     uuid: [id]
+  })
+}
+
+function resetPsw(id: string) {
+  if (!resetPassword) return
+  resetPassword({
+    uuid: id
   })
 }
 

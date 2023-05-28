@@ -72,7 +72,11 @@ const userApi = {
   updateUser: (data: UpdateUserRequest) => instance.post<UpdateUserRequest, {}>('/user/updateUser', data),
   login: (data: LoginRequest) => instance.post<LoginRequest, LoginResponse>('/user/login', data),
   resetPassword: (data: ResetPasswordRequest) => instance.post<ResetPasswordRequest, {}>('/user/resetPass', data),
-  importUsers: (data: ImportUsersRequest) => instance.post<ImportUsersRequest, {}>('/user/importUsers', data),
+  importUsers: (data: FormData) => instance.post<ImportUsersRequest, {}>('/user/importUsers', data, {
+    headers: {
+      "Content-Type": 'multipart/form-data'
+    }
+  }),
 }
 
 export default userApi

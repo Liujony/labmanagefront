@@ -11,14 +11,14 @@
           </el-breadcrumb>
           <div style="display: flex; align-items: center;">
             <div style="margin-right: 20px;">当前角色：{{ auth }}</div>
-            <el-dropdown>
+            <el-dropdown @command="handleCommand">
               <el-button type="primary" link>
                 <div class="user-info">{{ username }}&nbsp;</div> 
                 <el-icon><arrow-down /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item>退出登录</el-dropdown-item>
+                  <el-dropdown-item command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -43,6 +43,10 @@ const breadcrumbLabel = computed(() => route.meta.title)
 const userStore = useUserStore()
 const username = computed(() => userStore.username)
 const auth = computed(() => authOption.find(authOpt => authOpt.value === userStore.auth)?.label)
+
+const handleCommand = (command: string) => {
+  if( command === 'logout') userStore.logout()
+}
 </script>
 <style lang="scss">
 .layout-container {

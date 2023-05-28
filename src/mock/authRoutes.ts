@@ -41,6 +41,16 @@ export const SystemManagerRouter: RouteRecordRaw[] = [
       routeIndex: 4
     }
   },
+  {
+    path: 'classtable',
+    name: 'classTable',
+    component: () => import('@/views/LabTable.vue'),
+    meta: {
+      title: '实验室排课表',
+      icon: 'timer',
+      routeIndex: 5
+    }
+  }
 ]
 
 export const LabTechnicianRouter: RouteRecordRaw[] = [
@@ -54,6 +64,16 @@ export const LabTechnicianRouter: RouteRecordRaw[] = [
       routeIndex: 1
     }
   },
+  {
+    path: 'classtable',
+    name: 'classTable',
+    component: () => import('@/views/LabTable.vue'),
+    meta: {
+      title: '实验室排课表',
+      icon: 'timer',
+      routeIndex: 2
+    }
+  }
 ]
 
 export const TeacherRouter: RouteRecordRaw[] = [
@@ -77,6 +97,16 @@ export const TeacherRouter: RouteRecordRaw[] = [
       routeIndex: 2
     }
   },
+  {
+    path: 'classtable',
+    name: 'classTable',
+    component: () => import('@/views/LabTable.vue'),
+    meta: {
+      title: '实验室排课表',
+      icon: 'timer',
+      routeIndex: 3
+    }
+  }
 ]
 
 export const StudentRouter: RouteRecordRaw[] = [
@@ -88,6 +118,16 @@ export const StudentRouter: RouteRecordRaw[] = [
       title: '实验室申请',
       icon: 'lab',
       routeIndex: 1
+    }
+  },
+  {
+    path: 'classtable',
+    name: 'classTable',
+    component: () => import('@/views/LabTable.vue'),
+    meta: {
+      title: '实验室排课表',
+      icon: 'timer',
+      routeIndex: 2
     }
   }
 ]

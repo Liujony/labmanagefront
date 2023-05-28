@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import useRouteStore from './route'
 import router from '@/router'
-
+import md5 from 'md5'
 interface IUserState {
   uuid: string
   username: string
@@ -34,6 +34,7 @@ const useUserStore = defineStore('user', {
 
   actions: {
     async login (loginData: LoginRequest) {
+      loginData.password = md5(loginData.password)
       try {
         const res = await userApi.login(loginData)
         const { auth, uuid, username } = res
@@ -61,7 +62,6 @@ const useUserStore = defineStore('user', {
     },
     async logout () {
       localStorage.clear()
-      const router = useRouter()
       router.push('/login')
     }
   }
