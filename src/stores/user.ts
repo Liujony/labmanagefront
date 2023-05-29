@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import useRouteStore from './route'
 import router from '@/router'
 import md5 from 'md5'
+import useTabStore from './tab'
 interface IUserState {
   uuid: string
   username: string
@@ -61,6 +62,7 @@ const useUserStore = defineStore('user', {
       // router.push(redirectRoute)
     },
     async logout () {
+      useTabStore().removeAllTab()
       localStorage.clear()
       sessionStorage.clear()
       router.push('/login')

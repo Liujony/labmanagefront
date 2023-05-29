@@ -39,7 +39,7 @@ const useRouteStore = defineStore('route', {
       })
       router.addRoute(layoutRoute)
       routes.forEach((route) => router.addRoute('layout', route))
-    }
+    },
   }
 })
 
