@@ -62,6 +62,7 @@ const useUserStore = defineStore('user', {
     },
     async logout () {
       localStorage.clear()
+      sessionStorage.clear()
       router.push('/login')
     }
   }
