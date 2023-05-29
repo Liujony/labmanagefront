@@ -71,6 +71,7 @@ const userApi = {
   deleteUser: (data: DeleteUserRequest) => instance.post<DeleteUserRequest, {}>('/user/deleteUser', data),
   updateUser: (data: UpdateUserRequest) => instance.post<UpdateUserRequest, {}>('/user/updateUser', data),
   login: (data: LoginRequest) => instance.post<LoginRequest, LoginResponse>('/user/login', data),
+  logout: () => instance.get('/user/logout'),
   resetPassword: (data: ResetPasswordRequest) => instance.post<ResetPasswordRequest, {}>('/user/resetPass', data),
   importUsers: (data: FormData) => instance.post<ImportUsersRequest, {}>('/user/importUsers', data, {
     headers: {

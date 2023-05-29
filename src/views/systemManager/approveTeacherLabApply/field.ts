@@ -1,5 +1,8 @@
 import type { Field } from "@/type/field";
-
+const checkStatus = (rule: any, value: any, callback: any) => {
+  if (value !== '通过' && value !== '不通过') callback(new Error('请给出审批意见'))
+  else callback()
+}
 export const field = [
   {
     prop: 'id',
@@ -31,6 +34,14 @@ export const field = [
     fixed: false,
     updateRequired: false,
     editable: true,
+    width: 140
+  },
+  {
+    prop: 'course',
+    label: '课程',
+    fixed: false,
+    updateRequired: false,
+    editable: false,
     width: 140
   },
   {
@@ -102,13 +113,17 @@ export const field = [
     options: [
       { label: '通过', value: '通过' },
       { label: '不通过', value: '不通过' },
+    ],
+    rule: [
+      { validator: checkStatus, trigger: 'blur' }
     ]
   },
   {
-    prop: 'lab',
+    prop: 'name',
     label: '实验室',
     fixed: false,
     updateRequired: false,
     editable: true,
+    width: 180
   },
 ] as Field[]

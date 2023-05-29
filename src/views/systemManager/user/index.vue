@@ -227,7 +227,7 @@ const batchUpload = async () => {
     ElMessage.success('上传成功！')
     batchUploadFormVisible.value = false
   } catch (err) {
-    ElMessage.success('上传失败！')
+    ElMessage.error('上传失败！')
   }
 
   uploadFile.value = null

@@ -32,6 +32,18 @@ export const field = [
     // options: 
   },
   {
+    prop: 'course',
+    label: '课程',
+    fixed: false,
+    creationRequired: true,
+    updateRequired: true,
+    editable: true,
+    width: 140,
+    rule: [
+      { required: true, message: '请输入课程名称', trigger: 'blur' },
+    ]
+  },
+  {
     prop: 'labtype',
     label: '实验室类型',
     fixed: false,

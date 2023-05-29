@@ -62,6 +62,7 @@ const useUserStore = defineStore('user', {
       // router.push(redirectRoute)
     },
     async logout () {
+      await userApi.logout()
       useTabStore().removeAllTab()
       localStorage.clear()
       sessionStorage.clear()

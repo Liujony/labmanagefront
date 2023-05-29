@@ -58,12 +58,14 @@
           <el-input v-model="editForm[prop]" autocomplete="off" :disabled="!editable" v-else />
         </el-form-item>
         <el-form-item label="实验室" prop="lab">
-          <el-option
-            v-for="item in idleLabs"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
+          <el-select v-model="editForm.lab">
+            <el-option
+              v-for="{ label, value } in idleLabs"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -133,7 +135,7 @@ const handleCancel = () => {
   oldData.value = null
 }
 
-function handleEdit(row: any) {
+async function handleEdit(row: any) {
   const rowData = Object.assign({}, row)
   const editFormData = {} as Record<string, any>
   console.log('?', editFields.value)
@@ -147,6 +149,7 @@ function handleEdit(row: any) {
     } 
     editFormData[prop] = rowData[prop]
   })
+  editFormData.lab = ''
   oldData.value = Object.assign({}, editFormData) as any
   editForm = ref(editFormData as any)
   editFormVisible.value = true
@@ -156,14 +159,16 @@ function handleEdit(row: any) {
   const labCondition: TeacherLabDetail = {
     semester,
     labtype,
-    stunum,
-    startweek,
-    endweek,
-    day,
+    stunum: `${stunum}`,
+    day: `${day}`,
     section
   }
-  console.log(labCondition)
-  labApi.getLabsForTeacher(labCondition)
+  const labOptions = await labApi.getLabsForTeacher(labCondition)
+  console.log(labOptions)
+  idleLabs.value = labOptions.map(lab => ({
+    label: lab.name,
+    value: lab.id
+  }))
 }
 
 const handleApprove = async () => {

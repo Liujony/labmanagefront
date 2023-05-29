@@ -58,12 +58,14 @@
           <el-input v-model="editForm[prop]" autocomplete="off" :disabled="!editable" v-else />
         </el-form-item>
         <el-form-item label="实验室" prop="lab">
-          <el-option
-            v-for="item in idleLabs"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
+          <el-select v-model="editForm.lab">
+            <el-option
+              v-for="{ label, value } in idleLabs"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -88,7 +90,7 @@ import ElMessage from 'element-plus/lib/components/message/index.js'
 import { EXPERIMENT_SCHEDULE_INJECTION_KEY } from '@/context/experimentSchedule'
 import { field } from './field'
 import { SystemManagerApplyApi } from '@/api/apply'
-import labApi, { type TeacherLabDetail } from '@/api/lab'
+import labApi, { type StudentLabDetail, type TeacherLabDetail } from '@/api/lab'
 import { APPROVE_STUDENT_INJECTION_KEY } from '@/context/approveStudent'
 
 const {
@@ -135,7 +137,7 @@ const handleCancel = () => {
   oldData.value = null
 }
 
-function handleEdit(row: any) {
+async function handleEdit(row: any) {
   const rowData = Object.assign({}, row)
   const editFormData = {} as Record<string, any>
   console.log('?', editFields.value)
@@ -149,23 +151,25 @@ function handleEdit(row: any) {
     } 
     editFormData[prop] = rowData[prop]
   })
+  editFormData.lab = ''
   oldData.value = Object.assign({}, editFormData) as any
   editForm = ref(editFormData as any)
   editFormVisible.value = true
   
-  const { semester, labtype, stunum, startweek, endweek, day, section } = row
+  const { semester, labtype, stunum, week, day, section } = row
   console.log(row)
-  const labCondition: TeacherLabDetail = {
+  const labCondition: StudentLabDetail = {
     semester,
     labtype,
-    stunum,
-    startweek,
-    endweek,
-    day,
+    day: `${day}`,
     section
   }
-  console.log(labCondition)
-  labApi.getLabsForTeacher(labCondition)
+  const labOptions = await labApi.getLabsForStudent(labCondition)
+  console.log(labOptions)
+  idleLabs.value = labOptions.map(lab => ({
+    label: lab.name,
+    value: lab.id
+  }))
 }
 
 const handleApprove = async () => {
